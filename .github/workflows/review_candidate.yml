@@ -1,0 +1,27 @@
+name: Review candidate
+on:
+  pull_request_review:
+    type: submitted
+env:
+  WORKABLE_TOKEN: ${{ secrets.WORKABLE_TOKEN }}
+  WORKABLE_ID: ${{ secrets.WORKABLE_ID }}
+  WORKABLE_HOST: ${{ secrets.WORKABLE_HOST}}
+jobs:
+  workable:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set candidate env var
+        run: |
+          candidate=$(echo ${{ github.event.repository.name }} | cut -d '_' -f 3)
+          echo "CANDIDATE=${candidate}" >> $GITHUB_ENV
+          score=${{ github.event.review.state == 'APPROVED' && 'positive' || 'negative'}}
+          echo "SCORE=${score}" >> $GITHUB_ENV
+      - name: Submit review
+        if: ${{ env.CANDIDATE }}
+        run: |
+          curl  -X POST \
+          -H 'Content-Type: application/json' \
+          -H 'Authorization:Bearer ${{ env.WORKABLE_TOKEN}}' \
+          -H 'Accept: application/json' \
+          https://${{ env.WORKABLE_HOST }}/spi/v3/candidates/${{ env.CANDIDATE }}/ratings \
+          --data '{ "member_id": "${{ env.WORKABLE_ID }}", "comment": "${{github.event.review.body }}", "score": "${{ env.SCORE }}" }'

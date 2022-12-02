@@ -1,0 +1,11 @@
+name: Remove candidate
+on:
+  pull_request:
+    types: [opened, reopened]
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+jobs:
+  remove_candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -H "Accept:application/vnd.github+json" -H "Authorization:token ${{ env.GH_TOKEN }}" -X DELETE  https://api.github.com/repos/${{ github.event.pull_request.head.repo.owner.login }}/${{ github.event.pull_request.head.repo.name }}/collaborators/${{ github.event.pull_request.user.login }}

@@ -1,0 +1,23 @@
+name: Assign reviewer
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+env:
+  API_HOST: ${{ secrets.API_HOST }}
+  API_KEY: ${{ secrets.API_KEY }}
+jobs:
+  add-reviewer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set candidate env var
+        run: |
+          candidate=$(echo ${{ github.event.repository.name }} | cut -d '_' -f 3)
+          echo "CANDIDATE=${candidate}" >> $GITHUB_ENV
+      - name: Send request
+        run: |
+          curl -X POST \
+          -H 'Content-Type: application/json' \
+          -H 'x-api-key: ${{ env.API_KEY }}' \
+          -H 'Accept: application/json' \
+          https://${{ env.API_HOST }}/assign-reviewer \
+          --data '{ "candidateId": "${{ env.CANDIDATE }}", "repository": "${{ github.repository }}", "ref": "${{ github.ref }}" }'
