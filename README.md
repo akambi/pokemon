@@ -4,7 +4,7 @@ A single page app that lists all first generation Pokemon (ie: the first 150). T
 Current Features:
 - Pokemon are lazilly loaded as they scroll into view
 - Clicking on any Pokemon card will open a modal with further details
-- Users are able to filter Pokemon
+- Users are able to filter Pokemon 1) by name using a query string 2) by whether a pokemon is a favourite or not and 3) by their type
 - Users are able to favourite Pokemon
 
 ## Setup
@@ -12,13 +12,3 @@ Current Features:
 2. `npm start`
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-# Submission Instructions
-Please feel free to make any code adjustments or improvements you feel are necessary to achieve your solution.
-
-When complete, please submit your work by creating a PR from your branch into main. Appropriate code reviewers will be automatically added to your PR. Once your submission is under review, you will no longer be able to access this repository.
-
-Have fun!
-
-# Challenge
-Users are currently able to filter pokemon either 1) by name using a query string and 2) by whether a pokemon is a favourite or not. Provide users with a third way to filter pokemon: by their type. Users should be able to filter by both single and multiple types. A PokemonTypeIcon component is available for use (though you are not required to use it) and types are available through the PokeApi. Take liberty with the design and use any UI elements you see fit.

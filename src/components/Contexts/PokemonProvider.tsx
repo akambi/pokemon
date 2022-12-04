@@ -1,9 +1,10 @@
 import React, { useContext, useEffect, useState } from "react"
-import PokeAPI, { INamedApiResource, IPokemon } from "pokeapi-typescript"
+import PokeAPI, { INamedApiResource, INamedApiResourceList, IPokemon, IType } from "pokeapi-typescript"
 import { getIdFromUrl } from "../../utils"
 
 export enum Field {
   favourite = "favourite",
+  types = "types"
 }
 
 type Filters = { [key in Field]: FilterValue }
@@ -11,11 +12,15 @@ type FilterValue = boolean | string | string[] | undefined
 
 interface PokemonContextData {
   pokemon: INamedApiResource<IPokemon>[]
+  allTypes: PokemonTypeData[]
   query: string
   search: (query: string) => void
   favourites: string[]
   addFavourite: (pokemon: INamedApiResource<IPokemon>) => void
   removeFavourite: (pokemon: INamedApiResource<IPokemon>) => void
+  selectedTypes: PokemonType[]
+  addFilterType: (type: PokemonType) => void
+  removeFilterType: (type: PokemonType) => void
   filters: Filters
   addFilter: (field: Field, value: FilterValue) => void
   removeFilter: (field: Field) => void
@@ -25,6 +30,11 @@ export const PokemonContext = React.createContext<PokemonContextData | undefined
 
 interface PokemonProviderProps {
   children: React.ReactNode
+}
+
+export interface PokemonTypeData {
+  name: string
+  pokemon: string[]
 }
 
 export enum PokemonType {
@@ -60,6 +70,8 @@ export enum PokemonStat {
 const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) => {
   const [data, setData] = useState<INamedApiResource<IPokemon>[]>()
   const [pokemon, setPokemon] = useState<INamedApiResource<IPokemon>[]>()
+  const [allTypes, setAllTypes] = useState<PokemonTypeData[]>([])
+  const [selectedTypes, setSelectedTypes] = useState<PokemonType[]>([])
   const [favourites, setFavourites] = useState<string[]>([])
   const [query, setQuery] = useState<string>("")
   const [filters, setFilters] = useState<Filters>({} as Filters)
@@ -68,6 +80,14 @@ const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) => {
   useEffect(() => {
     fetchPokemon()
   }, [])
+
+  useEffect(() => {
+    fetchAllTypes()
+  }, [])
+
+  useEffect(() => {
+    addFilter(Field.types, [...selectedTypes])
+  }, [selectedTypes])
 
   useEffect(() => {
     filterData()
@@ -89,6 +109,17 @@ const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) => {
             filteredData = filteredData.filter((pokemon) => favourites.includes(pokemon.name))
           } else if (value === false) {
             filteredData = filteredData.filter((pokemon) => !favourites.includes(pokemon.name))
+          }
+          break
+        }
+        case Field.types: {
+          const selectedTypes = filters[field] as string[]
+          const filteredTypes = allTypes
+            .filter(type => selectedTypes.includes(type.name))
+            .map(type => type.pokemon).flat(1)
+
+          if (filteredTypes.length > 0) {
+            filteredData = filteredData.filter((pokemon) => filteredTypes.includes(pokemon.name))
           }
           break
         }
@@ -123,6 +154,26 @@ const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) => {
     }
   }
 
+  const fetchAllTypes = async () => {
+    try {
+      const response: INamedApiResourceList<IType> = await PokeAPI.Type.listAll()
+
+      await Promise.all(
+        response.results.map(({ name }) =>
+          PokeAPI.Type.resolve(name)
+            .then(type => ({
+              name: type.name,
+              pokemon: type.pokemon.map(pokemon => pokemon.pokemon.name),
+            })
+            )
+        )
+      )
+        .then((allTypes: PokemonTypeData[]) => setAllTypes(allTypes))
+    } catch (error) {
+      setError(error)
+    }
+  }
+
   const search = (query: string) => {
     setQuery(query)
   }
@@ -133,6 +184,14 @@ const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) => {
 
   function removeFavourite(pokemon: INamedApiResource<IPokemon>) {
     setFavourites(favourites.filter((favourite) => favourite !== pokemon.name))
+  }
+
+  function addFilterType(type: PokemonType) {
+    setSelectedTypes([...selectedTypes, type])
+  }
+
+  function removeFilterType(type: PokemonType) {
+    setSelectedTypes(selectedTypes.filter((selectedType) => selectedType !== type))
   }
 
   function addFilter(field: Field, value: FilterValue) {
@@ -157,11 +216,15 @@ const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) => {
   return (
     <PokemonContext.Provider value={{
       pokemon,
+      allTypes,
       query,
       search,
       favourites,
       addFavourite,
       removeFavourite,
+      selectedTypes,
+      addFilterType,
+      removeFilterType,
       filters,
       addFilter,
       removeFilter
