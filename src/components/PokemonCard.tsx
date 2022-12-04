@@ -225,6 +225,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
                     component="img"
                     height="250"
                     image={imageUrl}
+                    sx={{
+                      objectFit: "contain"
+                    }}
                   />
                 </Fade>
               </Box>
